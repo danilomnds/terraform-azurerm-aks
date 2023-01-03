@@ -1,5 +1,5 @@
 locals {
-  private_dns_zone_id = {
+  zone_id = {
     "brazilsouth"      = "/subscriptions/<subscription id>/resourceGroups/<resource group>/providers/Microsoft.Network/privateDnsZones/<private dns zone>"
     "Brazil South"     = "/subscriptions/<subscription id>/resourceGroups/<resource group>/providers/Microsoft.Network/privateDnsZones/<private dns zone>"
     "brazilsoutheast"  = "/subscriptions/<subscription id>/resourceGroups/<resource group>/providers/Microsoft.Network/privateDnsZones/<private dns zone>"
