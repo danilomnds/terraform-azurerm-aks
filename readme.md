@@ -117,7 +117,7 @@ output "id" {
 | os_disk_type | type of the operating system disk | `string` | `Managed` | No |
 | os_disk_size_gb | sizing of the operating system disk | `number` | n/a | `Yes` |
 | zones | list of availabilty zones that will be used | `number` | `["1","2","3"]` | No |
-| tags | tags for the aks cluster | `map(any)` | `{}` | No |
+| tags | tags for the aks cluster | `map(string)` | `{}` | No |
 | nodepool_adv_config | used to define custom kernel parameters | `any` | n/a | No |
 | log_analytics_workspace_id | used to enable the use of log analytics | `string` | n/a | No |
 | load_balancer_sku | public loadbalancer sku | `string` | `standard` | No |
