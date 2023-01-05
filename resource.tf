@@ -50,7 +50,7 @@ resource "azurerm_role_assignment" "aks_mi_contributor_subnet_svc" {
 }
 
 resource "azurerm_role_assignment" "aks_mi_dns_contributor" {
-  scope                = lookup(local.private_dns_zone_id, var.location)
+  scope                = var.private_dns_zone_id == null ? lookup(local.zone_id, var.location) : var.private_dns_zone_id
   role_definition_name = "Private DNS Zone Contributor"
   principal_id         = azurerm_user_assigned_identity.mi-aks.principal_id
 }
