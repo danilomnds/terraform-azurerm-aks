@@ -10,9 +10,6 @@ locals {
     provider    = "azr"
     region      = replace(lower(var.location), " ", "")
     create_date = formatdate("DD/MM/YY hh:mm", timeadd(timestamp(), "-3h"))
-    type        = "paas"
-    resource    = "kubernetes"
-    layer       = "application"
   }
   tags   = merge(local.default_tags, var.tags)
   subnet = element(split("/", var.vnet_subnet_id_nodes), length(split("/", var.vnet_subnet_id_nodes)) - 1)
