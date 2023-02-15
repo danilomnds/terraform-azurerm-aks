@@ -1,11 +1,10 @@
 resource "azurerm_user_assigned_identity" "mi-aks" {
-  resource_group_name = var.rg_name
+  resource_group_name = var.resource_group_name
   location            = var.location
   name                = "mi-${var.name}"
   tags                = local.tags
   lifecycle {
-    ignore_changes = [
-      # Since autoscaling is enabled, let's ignore changes to the node count.
+    ignore_changes = [      
       tags["create_date"]
     ]
   }
@@ -25,6 +24,7 @@ resource "azurerm_role_assignment" "aks_mi_contributor_udr" {
   depends_on = [
     azurerm_user_assigned_identity.mi-aks, data.azurerm_subnet.subnetaks
   ]
+  count                = var.outbound_type == "userDefinedRouting" ? 1 : 0
   scope                = data.azurerm_subnet.subnetaks.route_table_id
   role_definition_name = "Contributor"
   principal_id         = azurerm_user_assigned_identity.mi-aks.principal_id
@@ -50,7 +50,8 @@ resource "azurerm_role_assignment" "aks_mi_contributor_subnet_svc" {
 }
 
 resource "azurerm_role_assignment" "aks_mi_dns_contributor" {
-  scope                = var.private_dns_zone_id == null ? lookup(local.zone_id, var.location) : var.private_dns_zone_id
+  count                = var.private_cluster_enabled ? 1 : 0
+  scope                = var.private_dns_zone_id
   role_definition_name = "Private DNS Zone Contributor"
   principal_id         = azurerm_user_assigned_identity.mi-aks.principal_id
 }
@@ -61,14 +62,14 @@ resource "azurerm_kubernetes_cluster" "aks" {
   ]
   name                    = var.name
   location                = var.location
-  resource_group_name     = var.rg_name
+  resource_group_name     = var.resource_group_name
   dns_prefix              = var.name
   private_cluster_enabled = var.private_cluster_enabled
-  private_dns_zone_id     = var.private_dns_zone_id == null ? lookup(local.zone_id, var.location) : var.private_dns_zone_id
+  private_dns_zone_id     = var.private_dns_zone_id
   kubernetes_version      = var.kubernetes_version
   sku_tier                = var.sku_tier
   linux_profile {
-    admin_username = var.linux_username
+    admin_username = var.admin_username
     ssh_key {
       key_data = var.key_data
     }

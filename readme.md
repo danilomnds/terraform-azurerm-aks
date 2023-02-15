@@ -46,8 +46,8 @@ module "<cluster-name>" {
   source = "git::https://github.com/danilomnds/terraform-azurerm-aks?ref=v1.0.0"
   name = "<cluster-name>"
   location = "<your-region>"
-  rg_name = "<resource-group>"
-  kubernetes_version = "1.24.6"
+  resource_group_name = "<resource-group>"
+  kubernetes_version = "1.24.9"
   sku_tier = "Free"
   node_pool_name = "npsystem1"
   min_count = 3
@@ -61,7 +61,7 @@ module "<cluster-name>" {
   vnet_subnet_id_nodes = "/subscriptions/<aks subscription>/resourceGroups/<aks resource group>/providers/Microsoft.Network/virtualNetworks/<aks vnet>/subnets/<aks node subnet>"
   # you can specify more than one subnet that will be used for services or for a different nodepool
   vnet_subnet_id_services = ["/subscriptions/<aks subscription>/resourceGroups/<aks resource group>/providers/Microsoft.Network/virtualNetworks/<aks vnet>/subnets/<aks node subnet>"]
-  os_disk_size_gb = 256
+  os_disk_size_gb = 64
   nodepool_adv_config = {
     linux_os_config = {
       # example of customizing some kernel parameters
@@ -98,17 +98,17 @@ output "id" {
 |------|-------------|------|---------|:--------:|
 | name | cluster name | `string` | n/a | `Yes` |
 | location | azure region | `string` | n/a | `Yes` |
-| rg_name | resource group name where the AKS will be placed | `string` | n/a | `Yes` |
+| resource_group_name | resource group name where the AKS will be placed | `string` | n/a | `Yes` |
 | private_cluster_enabled | cluster API public? yes or no | `bool` | `true` | No |
-| private_dns_zone_id | private dns zone where the cluster cname will be registered | `string` | n/a | `Yes` |
+| private_dns_zone_id | private dns zone where a cluster cname will be registered for private clusters | `string` | n/a | No |
 | kubernetes_version | kubernetes version | `string` | `latest recommended version` | No |
 | sku_tier | Free ou Paid | `string` | `Free` | No |
-| node_pool_name | nodepool name | `string ` | n/a | `Yes` | 
+| node_pool_name | nodepool name | `string ` | n/a | `Yes` |
 | enable_auto_scaling | nodepool autoscaling | `bool` | `true` | No |
 | min_count | minimum number of nodes when autoscaling=true | `number` | n/a | No |
 | max_count | maximum number of nodes when autoscaling=true | `number` | n/a | No |
 | node_count | initial number of nodes. Must be defined when autoscaling=no | `number` | n/a | No |
-| only_critical_addons_enabled | only system daemon sets will run on the nodepool | `bool` | `false` | No |
+| only_critical_addons_enabled | only system daemon sets will run on the nodepool | `bool` | `true` | No |
 | node_labels | nodepool labels | `map` | n/a | No |
 | vm_size | nodepool shape | `string` | n/a | `Yes` |
 | vnet_subnet_id_nodes | subnet id to host the nodes | `string` | n/a | `Yes` |
@@ -128,8 +128,8 @@ output "id" {
 | docker_bridge_cidr | range used by docker bridge | `string` | `172.29.0.1/20` | No |
 | network_policy | network policy used by the cluster | `string` | `calico` | No |
 | outbound_type | outbound type of the cluster | `string` | `userDefinedRouting` | No |
-| admin_group_object_ids | list of Azure AD groups that will manage the cluster | `string` | n/a | `Yes` |
-| linux_username | list of Azure AD groups that will manage the cluster | `string` | `aksadmin` | `Yes` |
+| admin_group_object_ids | list of Azure AD groups that will manage the cluster | `list()` | n/a | No |
+| admin_username | name for the cluster admin user | `string` | `aksadmin` | No |
 | key_data | the public ssh key used to access the cluster | `string` | n/a | `Yes` |
 
 ## Output variables

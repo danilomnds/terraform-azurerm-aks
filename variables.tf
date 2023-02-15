@@ -5,7 +5,7 @@ variable "location" {
   type = string
 }
 
-variable "rg_name" {
+variable "resource_group_name" {
   type = string
 }
 
@@ -55,6 +55,7 @@ variable "node_count" {
 
 variable "only_critical_addons_enabled" {
   type = bool
+  default = true
 }
 
 variable "node_labels" {
@@ -154,7 +155,7 @@ variable "admin_group_object_ids" {
   default = []
 }
 
-variable "linux_username" {
+variable "admin_username" {
   type      = string
   default   = "aksadmin"
   sensitive = true

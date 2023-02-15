@@ -1,10 +1,4 @@
 locals {
-  zone_id = {
-    "brazilsouth"      = "/subscriptions/<subscription id>/resourceGroups/<resource group>/providers/Microsoft.Network/privateDnsZones/<private dns zone>"
-    "Brazil South"     = "/subscriptions/<subscription id>/resourceGroups/<resource group>/providers/Microsoft.Network/privateDnsZones/<private dns zone>"
-    "brazilsoutheast"  = "/subscriptions/<subscription id>/resourceGroups/<resource group>/providers/Microsoft.Network/privateDnsZones/<private dns zone>"
-    "Brazil Southeast" = "/subscriptions/<subscription id>/resourceGroups/<resource group>/providers/Microsoft.Network/privateDnsZones/<private dns zone>"
-  }
   default_tags = {
     deployedby  = "Terraform"
     provider    = "azr"
