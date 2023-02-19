@@ -24,7 +24,7 @@ resource "azurerm_role_assignment" "aks_mi_contributor_udr" {
   depends_on = [
     azurerm_user_assigned_identity.mi-aks, data.azurerm_subnet.subnetaks
   ]
-  count                = var.outbound_type == "userDefinedRouting" ? 1 : 0
+  count                = data.azurerm_subnet.subnetaks.route_table_id == null ? 0 : 1
   scope                = data.azurerm_subnet.subnetaks.route_table_id
   role_definition_name = "Contributor"
   principal_id         = azurerm_user_assigned_identity.mi-aks.principal_id

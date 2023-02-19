@@ -9,7 +9,7 @@ Module developed to standardize the AKS creation.
 
 | Module Version | Terraform Version | AzureRM Version |
 |----------------|-------------------| --------------- |
-| v1.0.0       | v1.3.6 | 3.37.0         |
+| v1.0.0         | v1.3.6            | 3.37.0         |
 
 ## Specifying a version
 
@@ -90,6 +90,22 @@ output "node_resource_group" {
 output "id" {
   value = module.<cluster-name>.id
 }
+output "host" {
+  value = module.<cluster-name>.host
+  sensitive = true
+}
+output "client_certificate" {
+  value = module.<cluster-name>.client_certificate
+  sensitive = true
+}
+output "client_key" {
+  value = module.<cluster-name>.client_key
+  sensitive = true
+}
+output "cluster_ca_certificate" {
+  value = module.<cluster-name>.cluster_ca_certificate
+  sensitive = true
+}
 ```
 
 ## Input variables
@@ -140,6 +156,10 @@ output "id" {
 | resource_group_name | rg where the cluster was placed |
 | node_resource_group | rg where the cluster resources were placed (lb, vmss etc) |
 | id | cluster id |
+| host | The Kubernetes cluster server host |
+| client_certificate | Base64 encoded public certificate used by clients to authenticate to the Kubernetes cluster |
+| client_key | Base64 encoded private key used by clients to authenticate to the Kubernetes cluster |
+| cluster_ca_certificate | Base64 encoded public CA certificate used as the root of trust for the Kubernetes cluster |
 
 ## Documentation
 
