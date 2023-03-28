@@ -134,11 +134,6 @@ variable "dns_service_ip" {
   default = "172.28.0.10"
 }
 
-variable "docker_bridge_cidr" {
-  type    = string
-  default = "172.29.0.1/20"
-}
-
 variable "network_policy" {
   type    = string
   default = "calico"

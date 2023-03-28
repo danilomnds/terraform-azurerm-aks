@@ -9,7 +9,7 @@ Module developed to standardize the AKS creation.
 
 | Module Version | Terraform Version | AzureRM Version |
 |----------------|-------------------| --------------- |
-| v1.0.0         | v1.3.6            | 3.37.0         |
+| v1.0.0         | v1.4.2            | 3.48.0         |
 
 ## Specifying a version
 
@@ -141,7 +141,6 @@ output "cluster_ca_certificate" {
 | pod_cidr | must be defined only when network_plugin=kubelet | `string` | `172.27.0.0/20` | No |
 | service_cidr | range used by kubernetes services | `string` | `172.28.0.0/20` | No |
 | dns_service_ip | IP in the service_cidr that will be used by the kube-dns | `string` | `172.28.0.10` | No |
-| docker_bridge_cidr | range used by docker bridge | `string` | `172.29.0.1/20` | No |
 | network_policy | network policy used by the cluster | `string` | `calico` | No |
 | outbound_type | outbound type of the cluster | `string` | `userDefinedRouting` | No |
 | admin_group_object_ids | list of Azure AD groups that will manage the cluster | `list()` | n/a | No |
