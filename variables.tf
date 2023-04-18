@@ -121,12 +121,12 @@ variable "network_plugin" {
 
 variable "pod_cidr" {
   type    = string
-  default = "172.27.0.0/20"
+  default = "172.27.0.0/16"
 }
 
 variable "service_cidr" {
   type    = string
-  default = "172.28.0.0/20"
+  default = "172.28.0.0/16"
 }
 
 variable "dns_service_ip" {

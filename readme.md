@@ -9,7 +9,7 @@ Module developed to standardize the AKS creation.
 
 | Module Version | Terraform Version | AzureRM Version |
 |----------------|-------------------| --------------- |
-| v1.0.0         | v1.4.2            | 3.48.0         |
+| v1.0.0         | v1.4.5            | 3.52.0         |
 
 ## Specifying a version
 
@@ -138,8 +138,8 @@ output "cluster_ca_certificate" {
 | log_analytics_workspace_id | used to enable the use of log analytics | `string` | n/a | No |
 | load_balancer_sku | public loadbalancer sku | `string` | `standard` | No |
 | network_plugin | Network plugin used by the cluster | `string` | `kubenet` | No |
-| pod_cidr | must be defined only when network_plugin=kubelet | `string` | `172.27.0.0/20` | No |
-| service_cidr | range used by kubernetes services | `string` | `172.28.0.0/20` | No |
+| pod_cidr | must be defined only when network_plugin=kubelet | `string` | `172.27.0.0/16` | No |
+| service_cidr | range used by kubernetes services | `string` | `172.28.0.0/16` | No |
 | dns_service_ip | IP in the service_cidr that will be used by the kube-dns | `string` | `172.28.0.10` | No |
 | network_policy | network policy used by the cluster | `string` | `calico` | No |
 | outbound_type | outbound type of the cluster | `string` | `userDefinedRouting` | No |
