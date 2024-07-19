@@ -9,74 +9,61 @@ Module developed to standardize the AKS creation.
 
 | Module Version | Terraform Version | AzureRM Version |
 |----------------|-------------------| --------------- |
-| v1.0.0         | v1.4.5            | 3.52.0         |
+| v1.0.0         | v1.4.5            | 3.52.0          |
+| v2.0.0         | v1.9.2            | 3.112.0          |
 
 ## Specifying a version
 
-To avoid that your code get updates automatically, is mandatory to set the version using the `source` option. 
-By defining the `?ref=***` in the the URL, you can define the version of the module.
-
+To avoid that your code get the latest module version, you can define the `?ref=***` in the URL to point to a specific version.
 Note: The `?ref=***` refers a tag on the git module repo.
 
 ## Important considerations
 
-- Following a MSFT recommendation, this module needs two subnets. One for nodepools the other one for services. The purporse is do not impact the cluster autoscaling, for example by accidentally deploying many services of the type load balancing and consume all IPs of the subnet.
+- Adopting a MSFT recommendation, this module requires the creation of two subnets. One for nodepools and the another for services. The purporse is do not impact the cluster autoscaling by accidentally deploying many services of the type load balancer that would consume all IPs of the subnet.
 
 - Because of naming standards, this module creates a managed identity that is used to integrate the AKS with other Azure services such as VNETs. All needed privileges to deploy the cluster are granted on the module. 
-
-- This module by default integrates the AKS with Azure AD and Azure Key Vault.
-
 
 ### [locals.tf](locals.tf)
 
 You can update the locals.tf following these considerations:
 
-- Some companies use a Hub/Spoke network topology, then following a MSFT recommendation, this module uses a single private dns zone in order to have a single point of configuration. This private DNS zone usually is placed in the Hub subscription. 
+- Some companies use a Hub/Spoke network topology, then following a MSFT recommendation, this module uses a single private dns zone aiming to have a single point of configuration. This private DNS zone usually is placed in the Hub subscription. 
 
 - You can define your own default tags
-
-### [variables.tf](variables.tf)
-
-You can edit this file in order to reflect your patterns. 
 
 ## Use case
 
 ```hcl
 module "<cluster-name>" {
-  source = "git::https://github.com/danilomnds/terraform-azurerm-aks?ref=v1.0.0"
+  source = "git::https://github.com/danilomnds/terraform-azurerm-aks?ref=v2.0.0"
   name = "<cluster-name>"
   location = "<your-region>"
   resource_group_name = "<resource-group>"
-  kubernetes_version = "1.24.9"
-  sku_tier = "Free"
-  node_pool_name = "npsystem1"
-  min_count = 3
-  max_count = 6  
-  vm_size = "Standard_D2s_v3"
-  node_labels = {
-    key1 = value1
-    key2 = value2
-  }
-  only_critical_addons_enabled = "false"
-  vnet_subnet_id_nodes = "/subscriptions/<aks subscription>/resourceGroups/<aks resource group>/providers/Microsoft.Network/virtualNetworks/<aks vnet>/subnets/<aks node subnet>"
-  # you can specify more than one subnet that will be used for services or for a different nodepool
   vnet_subnet_id_services = ["/subscriptions/<aks subscription>/resourceGroups/<aks resource group>/providers/Microsoft.Network/virtualNetworks/<aks vnet>/subnets/<aks node subnet>"]
-  os_disk_size_gb = 64
-  nodepool_adv_config = {
+  default_node_pool = {
+    name = "npsystem1"
+    vm_size = "Standard_D2as_v5"
+    enable_auto_scaling = true
+    vnet_subnet_id = "/subscriptions/<aks subscription>/resourceGroups/<aks resource group>/providers/Microsoft.Network/virtualNetworks/<aks vnet>/subnets/<aks node subnet>"
+    # example of customizing some kernel parameters (this is optional)
     linux_os_config = {
-      # example of customizing some kernel parameters
       swap_file_size_mb = <value>
-      sysctl_config = { 
+      sysctl_config = {
         vm_max_map_count = <value>
-        net_ipv4_neigh_default_gc_thresh3 = <value>}
+      }
     }
+    min_count = 3
+    max_count = 6  
+    only_critical_addons_enabled = "false"
+    os_disk_size_gb = 128
   }
+  http_application_routing_enabled = true
+  kubernetes_version = "1.27.7"
+  sku_tier = "Free"
   # attention! case sensive value
-  log_analytics_workspace_id = "/subscriptions/<id da subscription>/resourceGroups/<resource group>/providers/Microsoft.OperationalInsights/workspaces/<workspace>"
-  tags = {
-    key1 = "value1"
-    key2 = "value2"    
-  }  
+  oms_agent = {
+    log_analytics_workspace_id = "/subscriptions/<id da subscription>/resourceGroups/<resource group>/providers/Microsoft.OperationalInsights/workspaces/<workspace>"
+  }
 }
 output "cluster_name" {
   value = module.<cluster-name>.cluster_name
@@ -115,37 +102,64 @@ output "cluster_ca_certificate" {
 | name | cluster name | `string` | n/a | `Yes` |
 | location | azure region | `string` | n/a | `Yes` |
 | resource_group_name | resource group name where the AKS will be placed | `string` | n/a | `Yes` |
-| private_cluster_enabled | cluster API public? yes or no | `bool` | `true` | No |
-| private_dns_zone_id | private dns zone where a cluster cname will be registered for private clusters | `string` | n/a | No |
-| kubernetes_version | kubernetes version | `string` | `latest recommended version` | No |
-| sku_tier | Free ou Paid | `string` | `Free` | No |
-| node_pool_name | nodepool name | `string ` | n/a | `Yes` |
-| enable_auto_scaling | nodepool autoscaling | `bool` | `true` | No |
-| min_count | minimum number of nodes when autoscaling=true | `number` | n/a | No |
-| max_count | maximum number of nodes when autoscaling=true | `number` | n/a | No |
-| node_count | initial number of nodes. Must be defined when autoscaling=no | `number` | n/a | No |
-| only_critical_addons_enabled | only system daemon sets will run on the nodepool | `bool` | `true` | No |
-| node_labels | nodepool labels | `map` | n/a | No |
-| vm_size | nodepool shape | `string` | n/a | `Yes` |
-| vnet_subnet_id_nodes | subnet id to host the nodes | `string` | n/a | `Yes` |
 | vnet_subnet_id_service | subnet id that will host the services | `string` | n/a | `Yes` |
-| max_pods | maximum number of pods of a node | `number` | `110` | No |
-| os_disk_type | type of the operating system disk | `string` | `Managed` | No |
-| os_disk_size_gb | sizing of the operating system disk | `number` | n/a | `Yes` |
-| zones | list of availabilty zones that will be used | `number` | `["1","2","3"]` | No |
+| default_node_pool | block as defined in the official documentation | `object(map(string))` | n/a | `Yes` |
+| zones | specifies the default zones that will be used. If you need to undefine, set the value [] | `list` | `[1,2,3]` | No |
+| dns_prefix | DNS prefix specified when creating the managed cluster | `string` | n/a | No |
+| dns_prefix_private_cluster | Specifies the DNS prefix to use with private clusters | `string` | n/a | No |
+| aci_connector_linux | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| automatic_channel_upgrade | the upgrade channel for this kubernetes cluster | `string` | n/a | No |
+| api_server_access_profile | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| auto_scaler_profile | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| azure_active_directory_role_based_access_control | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| azure_policy_enabled | should the azure policy add-on be enabled?  | `bool` | `false` | No |
+| confidential_computing | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| cost_analysis_enabled | should cost analysis be enabled for this kubernetes cluster? | `bool` | `false` | No |
+| custom_ca_trust_certificates_base64 | a list of up to 10 base64 encoded cas that will be added to the trust store on nodes with the custom_ca_trust_enabled feature enabled | `list(string)` | n/a | No |
+| disk_encryption_set_id | the id of the disk encryption set which should be used for the nodes and volumes | `string` | n/a | No |
+| edge_zone | specifies the edge zone within the azure region where this managed kubernetes cluster should exist | `string` | n/a | No |
+| http_application_routing_enabled | should http application routing be enabled? | `bool` | `false` | No |
+| http_proxy_config | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| identity | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| image_cleaner_enabled | specifies whether image cleaner is enabled | `bool` | `true` | No |
+| image_cleaner_interval_hours | Specifies the interval in hours when images should be cleaned up | `number` | `48` | No |
+| ingress_application_gateway | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| key_management_service | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| key_vault_secrets_provider | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| kubelet_identity | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| kubernetes_version | kubernetes version | `string` | `latest recommended version` | No |
+| linux_profile | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| key_data | the public ssh key used to access the cluster | `string(sensitive)` | n/a | No |
+| local_account_disabled | if true local accounts will be disabled | `bool` | `false` | No |
+| maintenance_window | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| maintenance_window_auto_upgrade | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| maintenance_window_node_os | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| microsoft_defender | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| monitor_metrics | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| network_profile | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| node_os_channel_upgrade | the upgrade channel for this kubernetes cluster nodes os image | `string` | n/a | No |
+| node_resource_group | the name of the resource group where the kubernetes nodes should exist | `string` | n/a | No |
+| oidc_issuer_enabled | Enable or Disable the OIDC issuer URL | `bool` | `false` | No |
+| oms_agent | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| open_service_mesh_enabled | is open service mesh enabled | `bool` | `false` | No |
+| private_cluster_enabled | should this kubernetes cluster have its api server only exposed on internal ip addresses? | `bool` | `true` | No |
+| private_dns_zone_id | either the id of private dns zone which should be delegated to this cluster, system to have aks manage this or none | `string` | n/a | No |
+| private_cluster_public_fqdn_enabled | specifies whether a public fqdn for this private cluster should be added | `bool` | `false` | No |
+| service_mesh_profile | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| workload_autoscaler_profile | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| workload_identity_enabled | specifies whether azure ad workload identity should be enabled for the cluster | `bool` | `false` | No |
+| public_network_access_enabled | whether public network access is allowed for this kubernetes cluster | `bool` | `true` | No |
+| role_based_access_control_enabled | whether role based access control for the kubernetes cluster should be enabled | `bool` | `true` | No |
+| run_command_enabled | whether to enable run command for the cluster or not | `bool` | `true` | No |
+| service_principal | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| client_secret | the service principal's secret | `string(sensitive)` | n/a | No |
+| sku_tier | the sku tier that should be used for this kubernetes cluster | `string` | `Free`| No |
+| storage_profile | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| support_plan | specifies the support plan which should be used for this kubernetes cluster | `string` | `KubernetesOfficial` | No |
 | tags | tags for the aks cluster | `map(string)` | `{}` | No |
-| nodepool_adv_config | used to define custom kernel parameters | `any` | n/a | No |
-| log_analytics_workspace_id | used to enable the use of log analytics | `string` | n/a | No |
-| load_balancer_sku | public loadbalancer sku | `string` | `standard` | No |
-| network_plugin | Network plugin used by the cluster | `string` | `kubenet` | No |
-| pod_cidr | must be defined only when network_plugin=kubelet | `string` | `172.27.0.0/16` | No |
-| service_cidr | range used by kubernetes services | `string` | `172.28.0.0/16` | No |
-| dns_service_ip | IP in the service_cidr that will be used by the kube-dns | `string` | `172.28.0.10` | No |
-| network_policy | network policy used by the cluster | `string` | `calico` | No |
-| outbound_type | outbound type of the cluster | `string` | `userDefinedRouting` | No |
-| admin_group_object_ids | list of Azure AD groups that will manage the cluster | `list()` | n/a | No |
-| admin_username | name for the cluster admin user | `string` | `aksadmin` | No |
-| key_data | the public ssh key used to access the cluster | `string` | n/a | `Yes` |
+| web_app_routing | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| windows_profile | block as defined in the official documentation | `object(map(string))` | n/a | No |
+| admin_password | admin password for the windows profile | `string(sensitive)` | n/a | No |
 
 ## Output variables
 
