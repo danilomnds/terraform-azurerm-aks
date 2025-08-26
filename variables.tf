@@ -7,6 +7,7 @@ variable "vnet_subnet_id_services" {
 variable "name" {
   type = string
 }
+
 variable "location" {
   type = string
 }
@@ -20,10 +21,9 @@ variable "default_node_pool" {
     name                          = string
     vm_size                       = string
     capacity_reservation_group_id = optional(string)
-    custom_ca_trust_enabled       = optional(bool)
-    enable_auto_scaling           = optional(bool)
-    enable_host_encryption        = optional(bool)
-    enable_node_public_ip         = optional(bool)
+    auto_scaling_enabled          = optional(bool)
+    host_encryption_enabled       = optional(bool)
+    node_public_ip_enabled        = optional(bool)
     gpu_instance                  = optional(string)
     host_group_id                 = optional(string)
     kubelet_config = optional(object({
@@ -74,10 +74,9 @@ variable "default_node_pool" {
         vm_vfs_cache_pressure              = optional(number)
       }))
     }))
-    fips_enabled       = optional(bool)
-    kubelet_disk_type  = optional(string)
-    max_pods           = optional(number)
-    message_of_the_day = optional(string)
+    fips_enabled      = optional(bool)
+    kubelet_disk_type = optional(string)
+    max_pods          = optional(number)
     node_network_profile = optional(object({
       allowed_host_ports = optional(object({
         port_start = optional(number)
@@ -116,6 +115,7 @@ variable "default_node_pool" {
   })
 }
 
+# deprecated
 variable "zones" {
   type    = list(any)
   default = [1, 2, 3]
@@ -138,39 +138,40 @@ variable "aci_connector_linux" {
   default = null
 }
 
-variable "automatic_channel_upgrade" {
+variable "automatic_upgrade_channel" {
   type    = string
   default = null
 }
 
 variable "api_server_access_profile" {
   type = object({
-    authorized_ip_ranges     = optional(list(string))
-    subnet_id                = optional(string)
-    vnet_integration_enabled = optional(bool)
+    authorized_ip_ranges = optional(list(string))
   })
   default = null
 }
 
 variable "auto_scaler_profile" {
   type = object({
-    balance_similar_node_groups      = optional(bool)
-    expander                         = optional(string)
-    max_graceful_termination_sec     = optional(number)
-    max_node_provisioning_time       = optional(string)
-    max_unready_nodes                = optional(number)
-    max_unready_percentage           = optional(number)
-    new_pod_scale_up_delay           = optional(string)
-    scale_down_delay_after_add       = optional(string)
-    scale_down_delay_after_delete    = optional(string)
-    scale_down_delay_after_failure   = optional(string)
-    scan_interval                    = optional(string)
-    scale_down_unneeded              = optional(string)
-    scale_down_unready               = optional(string)
-    scale_down_utilization_threshold = optional(number)
-    empty_bulk_delete_max            = optional(number)
-    skip_nodes_with_local_storage    = optional(bool)
-    skip_nodes_with_system_pods      = optional(bool)
+    balance_similar_node_groups                   = optional(bool)
+    daemonset_eviction_for_empty_nodes_enabled    = optional(bool)
+    daemonset_eviction_for_occupied_nodes_enabled = optional(bool)
+    expander                                      = optional(string)
+    ignore_daemonsets_utilization_enabled         = optional(bool)
+    max_graceful_termination_sec                  = optional(number)
+    max_node_provisioning_time                    = optional(string)
+    max_unready_nodes                             = optional(number)
+    max_unready_percentage                        = optional(number)
+    new_pod_scale_up_delay                        = optional(string)
+    scale_down_delay_after_add                    = optional(string)
+    scale_down_delay_after_delete                 = optional(string)
+    scale_down_delay_after_failure                = optional(string)
+    scan_interval                                 = optional(string)
+    scale_down_unneeded                           = optional(string)
+    scale_down_unready                            = optional(string)
+    scale_down_utilization_threshold              = optional(number)
+    empty_bulk_delete_max                         = optional(number)
+    skip_nodes_with_local_storage                 = optional(bool)
+    skip_nodes_with_system_pods                   = optional(bool)
   })
   default = null
 }
@@ -178,13 +179,11 @@ variable "auto_scaler_profile" {
 
 variable "azure_active_directory_role_based_access_control" {
   type = object({
-    managed                = optional(bool)
     tenant_id              = optional(string)
     admin_group_object_ids = optional(list(string))
     azure_rbac_enabled     = optional(bool)
   })
   default = {
-    managed                = true
     azure_rbac_enabled     = true
     admin_group_object_ids = []
   }
@@ -309,7 +308,7 @@ variable "linux_profile" {
     }))
   })
   default = {
-    admin_username = "aksadmin"
+    admin_username = "admin"
   }
 }
 
@@ -391,13 +390,13 @@ variable "monitor_metrics" {
   })
   default = null
 }
+
 variable "network_profile" {
   type = object({
     network_plugin      = string
     network_mode        = optional(string)
     network_policy      = optional(string)
     dns_service_ip      = optional(string)
-    #docker_bridge_cidr  = optional(string)
     network_data_plane  = optional(string)
     network_plugin_mode = optional(string)
     outbound_type       = optional(string)
@@ -408,6 +407,7 @@ variable "network_profile" {
     ip_versions         = optional(list(string))
     load_balancer_sku   = optional(string)
     load_balancer_profile = optional(object({
+      backend_pool_type           = optional(string)
       idle_timeout_in_minutes     = optional(number)
       managed_outbound_ip_count   = optional(number)
       managed_outbound_ipv6_count = optional(number)
@@ -421,20 +421,20 @@ variable "network_profile" {
     }))
   })
   default = {
-    network_plugin    = "kubenet"
-    network_policy    = "calico"
-    dns_service_ip    = "172.28.0.10"
-    outbound_type     = "userDefinedRouting"
-    pod_cidr          = "172.27.0.0/16"
-    service_cidr      = "172.28.0.0/16"
-    #docker_bridge_cidr = "172.29.0.1/16"
-    load_balancer_sku = "standard"
+    network_plugin      = "azure"
+    network_plugin_mode = "overlay"
+    network_policy      = "calico"
+    dns_service_ip      = "172.28.0.10"
+    outbound_type       = "userDefinedRouting"
+    pod_cidr            = "172.27.0.0/16"
+    service_cidr        = "172.28.0.0/16"
+    load_balancer_sku   = "standard"
   }
 }
 
-variable "node_os_channel_upgrade" {
+variable "node_os_upgrade_channel" {
   type    = string
-  default = null
+  default = "NodeImage"
 }
 
 variable "node_resource_group" {
@@ -478,8 +478,16 @@ variable "private_cluster_public_fqdn_enabled" {
 variable "service_mesh_profile" {
   type = object({
     mode                             = string
+    revisions                        = optional(list(string))
     internal_ingress_gateway_enabled = optional(bool)
     external_ingress_gateway_enabled = optional(bool)
+    certificate_authority = optional(object({
+      key_vault_id           = string
+      root_cert_object_name  = string
+      cert_chain_object_name = string
+      cert_object_name       = string
+      key_object_name        = string
+    }))
   })
   default = null
 }
@@ -495,11 +503,6 @@ variable "workload_autoscaler_profile" {
 variable "workload_identity_enabled" {
   type    = bool
   default = false
-}
-
-variable "public_network_access_enabled" {
-  type    = bool
-  default = true
 }
 
 variable "role_based_access_control_enabled" {
@@ -536,7 +539,6 @@ variable "storage_profile" {
   type = object({
     blob_driver_enabled         = optional(bool)
     disk_driver_enabled         = optional(bool)
-    disk_driver_version         = optional(string)
     file_driver_enabled         = optional(bool)
     snapshot_controller_enabled = optional(bool)
   })
@@ -553,9 +555,18 @@ variable "tags" {
   default = {}
 }
 
+variable "upgrade_override" {
+  type = object({
+    force_upgrade_enabled = bool
+    effective_until       = optional(string)
+  })
+  default = null
+}
+
 variable "web_app_routing" {
   type = object({
-    dns_zone_id = string
+    dns_zone_ids             = list(string)
+    default_nginx_controller = optional(string)
   })
   default = null
 }
@@ -578,4 +589,9 @@ variable "admin_password" {
   type        = string
   sensitive   = true
   default     = null
+}
+
+variable "azure_ad_groups_lock_contributor" {
+  type    = list(string)
+  default = []
 }

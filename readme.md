@@ -10,7 +10,16 @@ Module developed to standardize the AKS creation.
 | Module Version | Terraform Version | AzureRM Version |
 |----------------|-------------------| --------------- |
 | v1.0.0         | v1.4.5            | 3.52.0          |
-| v2.0.0         | v1.9.2            | 3.112.0          |
+| v2.0.0         | v1.9.2            | 3.112.0         |
+| v2.1.0         | v1.12.2           | 4.40.0          |
+
+## Release Notes
+
+| Module Version | Note | 
+|----------------|------|
+| v1.0.0         | Initial Version |
+| v2.0.0         | upgrade to azurerm 3.112 |
+| v2.1.0         | upgrade to azurerm 4.40.0, change the default network mode azure cni overlay |
 
 ## Specifying a version
 
@@ -35,7 +44,7 @@ You can update the locals.tf following these considerations:
 
 ```hcl
 module "<cluster-name>" {
-  source = "git::https://github.com/danilomnds/terraform-azurerm-aks?ref=v2.0.0"
+  source = "git::https://github.com/danilomnds/terraform-azurerm-aks?ref=v2.1.0"
   name = "<cluster-name>"
   location = "<your-region>"
   resource_group_name = "<resource-group>"
@@ -43,7 +52,8 @@ module "<cluster-name>" {
   default_node_pool = {
     name = "npsystem1"
     vm_size = "Standard_D2as_v5"
-    enable_auto_scaling = true
+    # renamed var on azurerm 4.x
+    auto_scaling_enabled = true
     vnet_subnet_id = "/subscriptions/<aks subscription>/resourceGroups/<aks resource group>/providers/Microsoft.Network/virtualNetworks/<aks vnet>/subnets/<aks node subnet>"
     # example of customizing some kernel parameters (this is optional)
     linux_os_config = {
@@ -58,7 +68,7 @@ module "<cluster-name>" {
     os_disk_size_gb = 128
   }
   http_application_routing_enabled = true
-  kubernetes_version = "1.27.7"
+  kubernetes_version = "1.32.2"
   sku_tier = "Free"
   # attention! case sensive value
   oms_agent = {
@@ -108,7 +118,7 @@ output "cluster_ca_certificate" {
 | dns_prefix | DNS prefix specified when creating the managed cluster | `string` | n/a | No |
 | dns_prefix_private_cluster | Specifies the DNS prefix to use with private clusters | `string` | n/a | No |
 | aci_connector_linux | block as defined in the official documentation | `object(map(string))` | n/a | No |
-| automatic_channel_upgrade | the upgrade channel for this kubernetes cluster | `string` | n/a | No |
+| automatic_upgrade_channel | the upgrade channel for this kubernetes cluster | `string` | n/a | No |
 | api_server_access_profile | block as defined in the official documentation | `object(map(string))` | n/a | No |
 | auto_scaler_profile | block as defined in the official documentation | `object(map(string))` | n/a | No |
 | azure_active_directory_role_based_access_control | block as defined in the official documentation | `object(map(string))` | n/a | No |
@@ -137,7 +147,7 @@ output "cluster_ca_certificate" {
 | microsoft_defender | block as defined in the official documentation | `object(map(string))` | n/a | No |
 | monitor_metrics | block as defined in the official documentation | `object(map(string))` | n/a | No |
 | network_profile | block as defined in the official documentation | `object(map(string))` | n/a | No |
-| node_os_channel_upgrade | the upgrade channel for this kubernetes cluster nodes os image | `string` | n/a | No |
+| node_os_upgrade_channel | the upgrade channel for this kubernetes cluster nodes os image | `string` | n/a | No |
 | node_resource_group | the name of the resource group where the kubernetes nodes should exist | `string` | n/a | No |
 | oidc_issuer_enabled | Enable or Disable the OIDC issuer URL | `bool` | `false` | No |
 | oms_agent | block as defined in the official documentation | `object(map(string))` | n/a | No |
@@ -157,9 +167,12 @@ output "cluster_ca_certificate" {
 | storage_profile | block as defined in the official documentation | `object(map(string))` | n/a | No |
 | support_plan | specifies the support plan which should be used for this kubernetes cluster | `string` | `KubernetesOfficial` | No |
 | tags | tags for the aks cluster | `map(string)` | `{}` | No |
+| upgrade_override | block as defined in the official documentation | `object(map(string))` | n/a | No |
 | web_app_routing | block as defined in the official documentation | `object(map(string))` | n/a | No |
 | windows_profile | block as defined in the official documentation | `object(map(string))` | n/a | No |
 | admin_password | admin password for the windows profile | `string(sensitive)` | n/a | No |
+| azure_ad_groups_lock_contributor | groups that will have permissions to manage locks on aks resource group | `list(string)` | `L Group` | No |
+
 
 ## Output variables
 

@@ -50,7 +50,7 @@ resource "azurerm_role_assignment" "aks_mi_contributor_subnet_svc" {
 
 resource "azurerm_role_assignment" "aks_mi_dns_contributor" {
   count                = var.private_cluster_enabled ? 1 : 0
-  scope                = var.private_dns_zone_id
+  scope                = var.private_dns_zone_id != null ? var.private_dns_zone_id : lookup(local.zone_id, var.location)
   role_definition_name = "Private DNS Zone Contributor"
   principal_id         = azurerm_user_assigned_identity.mi-aks.principal_id
 }
@@ -66,10 +66,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
     name                          = var.default_node_pool.name
     vm_size                       = var.default_node_pool.vm_size
     capacity_reservation_group_id = lookup(var.default_node_pool, "capacity_reservation_group_id", null)
-    custom_ca_trust_enabled       = lookup(var.default_node_pool, "custom_ca_trust_enabled", null)
-    enable_auto_scaling           = lookup(var.default_node_pool, "enable_auto_scaling", true)
-    enable_host_encryption        = lookup(var.default_node_pool, "enable_host_encryption", null)
-    enable_node_public_ip         = lookup(var.default_node_pool, "enable_node_public_ip", false)
+    auto_scaling_enabled          = lookup(var.default_node_pool, "auto_scaling_enabled", true)
+    host_encryption_enabled       = lookup(var.default_node_pool, "host_encryption_enabled", null)
+    node_public_ip_enabled        = lookup(var.default_node_pool, "node_public_ip_enabled", false)
     gpu_instance                  = lookup(var.default_node_pool, "gpu_instance", null)
     host_group_id                 = lookup(var.default_node_pool, "host_group_id", null)
     dynamic "kubelet_config" {
@@ -129,10 +128,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
         }
       }
     }
-    fips_enabled       = lookup(var.default_node_pool, "fips_enabled", null)
-    kubelet_disk_type  = lookup(var.default_node_pool, "kubelet_disk_type", null)
-    max_pods           = lookup(var.default_node_pool, "max_pods", 110)
-    message_of_the_day = lookup(var.default_node_pool, "message_of_the_day", null)
+    fips_enabled      = lookup(var.default_node_pool, "fips_enabled", null)
+    kubelet_disk_type = lookup(var.default_node_pool, "kubelet_disk_type", null)
+    max_pods          = lookup(var.default_node_pool, "max_pods", 110)
     dynamic "node_network_profile" {
       for_each = var.default_node_pool.node_network_profile != null ? [var.default_node_pool.node_network_profile] : []
       content {
@@ -186,45 +184,45 @@ resource "azurerm_kubernetes_cluster" "aks" {
       subnet_name = aci_connector_linux.value.subnet_name
     }
   }
-  automatic_channel_upgrade = var.automatic_channel_upgrade
+  automatic_upgrade_channel = var.automatic_upgrade_channel
   dynamic "api_server_access_profile" {
     for_each = var.api_server_access_profile != null ? [var.api_server_access_profile] : []
     content {
-      authorized_ip_ranges     = lookup(api_server_access_profile.value, "authorized_ip_ranges", null)
-      subnet_id                = lookup(api_server_access_profile.value, "subnet_id", null)
-      vnet_integration_enabled = lookup(api_server_access_profile.value, "vnet_integration_enabled", null)
+      authorized_ip_ranges = lookup(api_server_access_profile.value, "authorized_ip_ranges", null)
     }
   }
   dynamic "auto_scaler_profile" {
     for_each = var.auto_scaler_profile != null ? [var.auto_scaler_profile] : []
     content {
-      balance_similar_node_groups      = lookup(auto_scaler_profile.value, "balance_similar_node_groups", false)
-      expander                         = lookup(auto_scaler_profile.value, "expander", "random")
-      max_graceful_termination_sec     = lookup(auto_scaler_profile.value, "max_graceful_termination_sec", 600)
-      max_node_provisioning_time       = lookup(auto_scaler_profile.value, "max_node_provisioning_time", "15m")
-      max_unready_nodes                = lookup(auto_scaler_profile.value, "max_unready_nodes", 3)
-      max_unready_percentage           = lookup(auto_scaler_profile.value, "max_unready_percentage", 45)
-      new_pod_scale_up_delay           = lookup(auto_scaler_profile.value, "new_pod_scale_up_delay", "10s")
-      scale_down_delay_after_add       = lookup(auto_scaler_profile.value, "scale_down_delay_after_add", "10m")
-      scale_down_delay_after_delete    = lookup(auto_scaler_profile.value, "scale_down_delay_after_delete", "10s")
-      scale_down_delay_after_failure   = lookup(auto_scaler_profile.value, "scale_down_delay_after_failure", "3m")
-      scan_interval                    = lookup(auto_scaler_profile.value, "scan_interval", "10s")
-      scale_down_unneeded              = lookup(auto_scaler_profile.value, "scale_down_unneeded", "10m")
-      scale_down_unready               = lookup(auto_scaler_profile.value, "scale_down_unready", "20m")
-      scale_down_utilization_threshold = lookup(auto_scaler_profile.value, "scale_down_utilization_threshold", 0.5)
-      empty_bulk_delete_max            = lookup(auto_scaler_profile.value, "empty_bulk_delete_max", 10)
-      skip_nodes_with_local_storage    = lookup(auto_scaler_profile.value, "skip_nodes_with_local_storage", true)
-      skip_nodes_with_system_pods      = lookup(auto_scaler_profile.value, "skip_nodes_with_system_pods", true)
+      balance_similar_node_groups                   = lookup(auto_scaler_profile.value, "balance_similar_node_groups", false)
+      daemonset_eviction_for_empty_nodes_enabled    = lookup(auto_scaler_profile.value, "daemonset_eviction_for_empty_nodes_enabled", false)
+      daemonset_eviction_for_occupied_nodes_enabled = lookup(auto_scaler_profile.value, "daemonset_eviction_for_occupied_nodes_enabled", true)
+      expander                                      = lookup(auto_scaler_profile.value, "expander", "random")
+      ignore_daemonsets_utilization_enabled         = lookup(auto_scaler_profile.value, "ignore_daemonsets_utilization_enabled", false)
+      max_graceful_termination_sec                  = lookup(auto_scaler_profile.value, "max_graceful_termination_sec", 600)
+      max_node_provisioning_time                    = lookup(auto_scaler_profile.value, "max_node_provisioning_time", "15m")
+      max_unready_nodes                             = lookup(auto_scaler_profile.value, "max_unready_nodes", 3)
+      max_unready_percentage                        = lookup(auto_scaler_profile.value, "max_unready_percentage", 45)
+      new_pod_scale_up_delay                        = lookup(auto_scaler_profile.value, "new_pod_scale_up_delay", "10s")
+      scale_down_delay_after_add                    = lookup(auto_scaler_profile.value, "scale_down_delay_after_add", "10m")
+      scale_down_delay_after_delete                 = lookup(auto_scaler_profile.value, "scale_down_delay_after_delete", "10s")
+      scale_down_delay_after_failure                = lookup(auto_scaler_profile.value, "scale_down_delay_after_failure", "3m")
+      scan_interval                                 = lookup(auto_scaler_profile.value, "scan_interval", "10s")
+      scale_down_unneeded                           = lookup(auto_scaler_profile.value, "scale_down_unneeded", "10m")
+      scale_down_unready                            = lookup(auto_scaler_profile.value, "scale_down_unready", "20m")
+      scale_down_utilization_threshold              = lookup(auto_scaler_profile.value, "scale_down_utilization_threshold", 0.5)
+      empty_bulk_delete_max                         = lookup(auto_scaler_profile.value, "empty_bulk_delete_max", 10)
+      skip_nodes_with_local_storage                 = lookup(auto_scaler_profile.value, "skip_nodes_with_local_storage", true)
+      skip_nodes_with_system_pods                   = lookup(auto_scaler_profile.value, "skip_nodes_with_system_pods", true)
     }
   }
   dynamic "azure_active_directory_role_based_access_control" {
     for_each = var.azure_active_directory_role_based_access_control != null ? [var.azure_active_directory_role_based_access_control] : []
     content {
-      managed                = lookup(azure_active_directory_role_based_access_control.value, "managed", null)
       tenant_id              = lookup(azure_active_directory_role_based_access_control.value, "tenant_id", null)
       admin_group_object_ids = lookup(azure_active_directory_role_based_access_control.value, "admin_group_object_ids", null)
       azure_rbac_enabled     = lookup(azure_active_directory_role_based_access_control.value, "azure_rbac_enabled", null)
-     }
+    }
   }
   azure_policy_enabled = var.azure_policy_enabled
   dynamic "confidential_computing" {
@@ -379,7 +377,6 @@ resource "azurerm_kubernetes_cluster" "aks" {
       network_mode        = lookup(network_profile.value, "network_mode", null)
       network_policy      = lookup(network_profile.value, "network_policy", null)
       dns_service_ip      = lookup(network_profile.value, "dns_service_ip", null)
-      #docker_bridge_cidr = lookup(network_profile.value, "docker_bridge_cidr", null)
       network_data_plane  = lookup(network_profile.value, "network_data_plane", null)
       network_plugin_mode = lookup(network_profile.value, "network_plugin_mode", null)
       outbound_type       = lookup(network_profile.value, "outbound_type", null)
@@ -392,6 +389,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
       dynamic "load_balancer_profile" {
         for_each = network_profile.value.load_balancer_profile != null ? [network_profile.value.load_balancer_profile] : []
         content {
+          backend_pool_type           = lookup(load_balancer_profile.value, "backend_pool_type", "NodeIPConfiguration")
           idle_timeout_in_minutes     = lookup(load_balancer_profile.value, "idle_timeout_in_minutes", 30)
           managed_outbound_ip_count   = lookup(load_balancer_profile.value, "managed_outbound_ip_count", null)
           managed_outbound_ipv6_count = lookup(load_balancer_profile.value, "managed_outbound_ipv6_count", null)
@@ -409,7 +407,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
       }
     }
   }
-  node_os_channel_upgrade = var.node_os_channel_upgrade
+  node_os_upgrade_channel = var.node_os_upgrade_channel
   node_resource_group     = var.node_resource_group
   oidc_issuer_enabled     = var.oidc_issuer_enabled
   dynamic "oms_agent" {
@@ -421,14 +419,25 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
   open_service_mesh_enabled           = var.open_service_mesh_enabled
   private_cluster_enabled             = var.private_cluster_enabled
-  private_dns_zone_id                 = var.private_dns_zone_id
+  private_dns_zone_id                 = var.private_cluster_enabled == true ? (var.private_dns_zone_id == null ? lookup(local.zone_id, var.location) : var.private_dns_zone_id) : null
   private_cluster_public_fqdn_enabled = var.private_cluster_public_fqdn_enabled
   dynamic "service_mesh_profile" {
     for_each = var.service_mesh_profile != null ? [var.service_mesh_profile] : []
     content {
       mode                             = service_mesh_profile.value.mode
-      internal_ingress_gateway_enabled = lookup(oms_agent.value, "internal_ingress_gateway_enabled", null)
-      external_ingress_gateway_enabled = lookup(oms_agent.value, "external_ingress_gateway_enabled", null)
+      revisions                        = lookup(service_mesh_profile.value, "revisions", null)
+      internal_ingress_gateway_enabled = lookup(service_mesh_profile.value, "internal_ingress_gateway_enabled", null)
+      external_ingress_gateway_enabled = lookup(service_mesh_profile.value, "external_ingress_gateway_enabled", null)
+      dynamic "certificate_authority" {
+        for_each = service_mesh_profile.value.certificate_authority != null ? [service_mesh_profile.value.certificate_authority] : []
+        content {
+          key_vault_id           = service_mesh_profile.value.key_vault_id
+          root_cert_object_name  = service_mesh_profile.value.root_cert_object_name
+          cert_chain_object_name = service_mesh_profile.value.cert_chain_object_name
+          cert_object_name       = service_mesh_profile.value.cert_object_name
+          key_object_name        = service_mesh_profile.value.key_object_name
+        }
+      }
     }
   }
   dynamic "workload_autoscaler_profile" {
@@ -439,7 +448,6 @@ resource "azurerm_kubernetes_cluster" "aks" {
     }
   }
   workload_identity_enabled         = var.workload_identity_enabled
-  public_network_access_enabled     = var.public_network_access_enabled
   role_based_access_control_enabled = var.role_based_access_control_enabled
   run_command_enabled               = var.run_command_enabled
   dynamic "service_principal" {
@@ -455,17 +463,24 @@ resource "azurerm_kubernetes_cluster" "aks" {
     content {
       blob_driver_enabled         = lookup(storage_profile.value, "blob_driver_enabled", false)
       disk_driver_enabled         = lookup(storage_profile.value, "disk_driver_enabled", true)
-      disk_driver_version         = lookup(storage_profile.value, "disk_driver_version", "v1")
       file_driver_enabled         = lookup(storage_profile.value, "file_driver_enabled", true)
       snapshot_controller_enabled = lookup(storage_profile.value, "snapshot_controller_enabled", true)
     }
   }
   support_plan = var.support_plan
   tags         = local.tags
+  dynamic "upgrade_override" {
+    for_each = var.upgrade_override != null ? [var.upgrade_override] : []
+    content {
+      force_upgrade_enabled = upgrade_override.value.force_upgrade_enabled
+      effective_until       = lookup(upgrade_override.value, "effective_until", null)
+    }
+  }
   dynamic "web_app_routing" {
     for_each = var.web_app_routing != null ? [var.web_app_routing] : []
     content {
-      dns_zone_id = web_app_routing.value.dns_zone_id
+      dns_zone_ids             = web_app_routing.value.dns_zone_ids
+      default_nginx_controller = lookup(web_app_routing.value, "default_nginx_controller", null)
     }
   }
   dynamic "windows_profile" {
@@ -489,4 +504,12 @@ resource "azurerm_kubernetes_cluster" "aks" {
       default_node_pool[0].node_count, tags["create_date"], linux_profile[0].ssh_key[0].key_data
     ]
   }
+}
+
+resource "azurerm_role_assignment" "locks_contributor" {
+  depends_on           = [azurerm_kubernetes_cluster.aks]
+  for_each             = var.azure_ad_groups_lock_contributor != [] ? toset(var.azure_ad_groups_lock_contributor) : []
+  scope                = azurerm_kubernetes_cluster.aks.id
+  role_definition_name = "Locks Contributor"
+  principal_id         = each.value
 }
